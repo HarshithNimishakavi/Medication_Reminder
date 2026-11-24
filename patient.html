@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#377b61"><link rel="manifest" href="/manifest.webmanifest">
+  <title>My medicines | Medi Remind</title><link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="patient.html"><span class="brand-mark">+</span> Medi Remind</a><button class="quiet-button" onclick="logout()">Log out</button></header>
+  <main class="page-shell">
+    <section class="welcome-row"><div><p class="eyebrow">YOUR DAILY CARE</p><h1 id="greeting">Good day</h1><p class="muted">A gentle reminder to stay on track, one dose at a time.</p></div><div class="date-pill" id="today"></div></section>
+    <section class="notice-banner"><div class="notice-icon">◉</div><div><strong id="alertHeading">Turn on medicine alerts</strong><p id="alertDescription">Allow browser notifications to get reminders. Where supported, choose “I took it” or “Later” right from the notification.</p></div><button class="secondary-button" id="enableNotifications" onclick="enableNotifications()">Enable alerts</button></section>
+    <section class="section-heading"><div><p class="eyebrow">YOUR PLAN</p><h2>Today’s medicines</h2></div><span id="med-count" class="count-pill"></span></section>
+    <div id="medicines" class="medicine-list"><p class="muted">Loading your plan…</p></div>
+    <section class="note-card"><span class="note-icon">✦</span><div><strong>Need help?</strong><p>Ask your caregiver if you have questions about a medicine or its schedule.</p></div></section>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+<script>
+const API = location.origin;
+const user = JSON.parse(localStorage.getItem('user') || 'null');
+if (!user || user.role !== 'patient') location.href = 'index.html';
+document.getElementById('greeting').textContent = `Hello, ${user.name}`;
+document.getElementById('today').textContent = new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'}).format(new Date());
+let medicines = [];
+if('Notification' in window && Notification.permission==='granted'){document.getElementById('enableNotifications').textContent='Alerts enabled';document.getElementById('alertHeading').textContent='Medicine alerts are on';}
+const takenToday = new Set(JSON.parse(sessionStorage.getItem('takenToday') || '[]'));
+function escapeHtml(s='') { return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadMedicines() {
+  const [res,todayRes]=await Promise.all([fetch(`${API}/api/medicines?patientId=${user.id}`),fetch(`${API}/api/today?patientId=${user.id}`)]); medicines=await res.json();const today=await todayRes.json();
+  document.getElementById('med-count').textContent=`${medicines.length} medicines`;
+  const root=document.getElementById('medicines');
+  if(!medicines.length){root.innerHTML='<div class="empty-card">No active medicines on your plan yet.</div>';return;}
+  root.innerHTML=medicines.flatMap(m=>(m.times||[]).map((time,i)=>{
+    const dose=today.find(d=>d.medicineId===m.id&&d.time===time),status=dose?.status||'upcoming',done=status==='taken';
+    const label={taken:'Taken',missed:'Missed',due:'Due now',upcoming:'Upcoming'}[status];
+    const canRecord=status==='due'||status==='missed';
+    return `<article class="medicine-card ${done?'is-done':''} ${status==='missed'?'is-missed':''}" id="dose-${m.id}-${i}"><div class="medicine-time"><span>${escapeHtml(time)}</span><small class="dose-status ${status}">${label}</small></div><div class="medicine-info"><h3>${escapeHtml(m.name)}</h3><p>${escapeHtml(m.dosage||'As prescribed')}${m.nameTelugu?` <span class="telugu">· ${escapeHtml(m.nameTelugu)}</span>`:''}</p></div>${canRecord?`<button class="taken-button" ${done?'disabled':''} onclick="markTaken(${m.id},'${escapeHtml(time)}')">${done?'✓ Taken':status==='missed'?'I took it late':'I took it'}</button>`:`<span class="scheduled-note">${status==='upcoming'?'Not due yet':''}</span>`}</article>`;
+  })).join('');
+}
+async function markTaken(id,time){const key=`${new Date().toDateString()}:${id}:${time}`;if(takenToday.has(key))return;takenToday.add(key);sessionStorage.setItem('takenToday',JSON.stringify([...takenToday]));const res=await fetch(`${API}/api/doselog`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({medicineId:id,patientId:user.id,status:'taken',doseTime:time})});if(!res.ok){takenToday.delete(key);sessionStorage.setItem('takenToday',JSON.stringify([...takenToday]));showToast('Could not record this dose. Please try again.');return;}showToast('Dose recorded. Well done!');loadMedicines();}
+function speak(text){if(!('speechSynthesis'in window))return;const utter=new SpeechSynthesisUtterance(`${text} తీసుకోండి`);utter.lang='te-IN';const v=speechSynthesis.getVoices().find(x=>x.lang.toLowerCase().startsWith('te'));if(v)utter.voice=v;speechSynthesis.cancel();speechSynthesis.speak(utter);}
+function notifyDue(){const d=new Date(),clock=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,stamp=`${d.toDateString()} ${clock}`;if(sessionStorage.getItem('lastReminder')===stamp)return;const due=medicines.filter(m=>(m.times||[]).includes(clock));if(!due.length)return;sessionStorage.setItem('lastReminder',stamp);const names=due.map(m=>`${m.name}${m.dosage?' '+m.dosage:''}`).join(', ');showToast(`Time to take ${names}`);speak(names);}
+function decodeKey(key){const padded=key.replace(/-/g,'+').replace(/_/g,'/');const raw=atob(padded+'='.repeat((4-padded.length%4)%4));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+async function enableNotifications(){if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window)){showToast('Push alerts are not supported by this browser.');return;}const button=document.getElementById('enableNotifications');button.disabled=true;try{const registration=await navigator.serviceWorker.register('/sw.js');const permission=await Notification.requestPermission();if(permission!=='granted')throw new Error('Allow notifications for this site in your browser settings.');const keyRes=await fetch(`${API}/api/push/public-key`),{publicKey}=await keyRes.json();let subscription=await registration.pushManager.getSubscription();if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:decodeKey(publicKey)});const res=await fetch(`${API}/api/push/subscribe`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patientId:user.id,subscription})});if(!res.ok)throw new Error('Could not save this device for reminders.');button.textContent='Alerts enabled';document.getElementById('alertHeading').textContent='Medicine alerts are on';document.getElementById('alertDescription').textContent='This device is registered for scheduled push alerts, including when the page is closed, while the reminder server is running.';showToast('This device is registered for medicine alerts.');}catch(error){showToast(error.message||'Could not enable alerts.');}finally{button.disabled=false;}}
+async function restorePush(){if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)||Notification.permission!=='granted')return;try{const reg=await navigator.serviceWorker.register('/sw.js');const subscription=await reg.pushManager.getSubscription();if(!subscription)return;await fetch(`${API}/api/push/subscribe`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patientId:user.id,subscription})});document.getElementById('enableNotifications').textContent='Alerts enabled';document.getElementById('alertHeading').textContent='Medicine alerts are on';document.getElementById('alertDescription').textContent='This device is registered for scheduled push alerts, including when the page is closed, while the reminder server is running.';}catch(e){console.warn('Could not restore push subscription',e);}}
+let toastTimer;function showToast(s){const el=document.getElementById('toast');el.textContent=s;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4500);}
+function logout(){localStorage.removeItem('user');location.href='index.html';}
+restorePush();loadMedicines().then(notifyDue).catch(()=>document.getElementById('medicines').innerHTML='<div class="empty-card">Could not load your plan. Check that the server is running.</div>');setInterval(notifyDue,15000);setInterval(()=>loadMedicines().catch(()=>{}),30000);
+</script>
+</body></html>

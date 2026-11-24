@@ -1,0 +1,118 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "ammamma",
+      "password": "1234",
+      "role": "patient",
+      "name": "Seetamahalakshmi",
+      "location": "Tadepalligudem",
+      "linkedPatientId": null
+    },
+    {
+      "id": 2,
+      "username": "uncle",
+      "password": "1234",
+      "role": "caregiver",
+      "name": "Kiran",
+      "location": "Kakinada",
+      "linkedPatientId": 1
+    }
+  ],
+  "medicines": [
+    {
+      "id": 1,
+      "patientId": 1,
+      "name": "Metformin",
+      "nameTelugu": "మెట్‌ఫార్మిన్",
+      "dosage": "500mg",
+      "times": [
+        "08:00",
+        "20:00"
+      ],
+      "active": true
+    },
+    {
+      "id": 2,
+      "patientId": 1,
+      "name": "Atorvastatin",
+      "nameTelugu": "అటోర్వాస్టాటిన్",
+      "dosage": "10mg",
+      "times": [
+        "21:00"
+      ],
+      "active": true
+    },
+    {
+      "id": 3,
+      "patientId": 1,
+      "name": "paracetmol",
+      "nameTelugu": "",
+      "dosage": "500mg",
+      "times": [
+        "15:48"
+      ],
+      "active": true
+    },
+    {
+      "id": 4,
+      "patientId": 1,
+      "name": "citrizen",
+      "nameTelugu": "",
+      "dosage": "200",
+      "times": [
+        "16:04"
+      ],
+      "active": true
+    }
+  ],
+  "doseLogs": [
+    {
+      "id": 1,
+      "medicineId": 1,
+      "patientId": 1,
+      "status": "taken",
+      "loggedAt": "2026-08-14T15:11:53.221Z"
+    },
+    {
+      "id": 2,
+      "medicineId": 1,
+      "patientId": 1,
+      "status": "missed",
+      "loggedAt": "2026-08-14T15:11:59.236Z"
+    },
+    {
+      "id": 3,
+      "medicineId": 2,
+      "patientId": 1,
+      "status": "taken",
+      "loggedAt": "2026-08-14T15:12:04.263Z"
+    },
+    {
+      "id": 4,
+      "medicineId": 1,
+      "patientId": 1,
+      "status": "taken",
+      "loggedAt": "2026-08-14T15:12:42.430Z"
+    },
+    {
+      "id": 5,
+      "medicineId": 1,
+      "patientId": 1,
+      "status": "missed",
+      "loggedAt": "2026-08-14T15:12:45.208Z"
+    },
+    {
+      "id": 6,
+      "medicineId": 1,
+      "patientId": 1,
+      "status": "taken",
+      "loggedAt": "2026-11-24T10:11:57.495Z"
+    }
+  ],
+  "nextId": {
+    "users": 3,
+    "medicines": 5,
+    "doseLogs": 7
+  }
+}

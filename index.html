@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Medi Remind</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="login-shell">
+    <a class="brand" href="index.html"><span class="brand-mark">+</span> Medi Remind</a>
+    <section class="login-card">
+      <p class="eyebrow">MEDICINE, MADE SIMPLE</p>
+      <h1>Welcome back</h1>
+      <p class="muted login-copy">Sign in to view your care dashboard.</p>
+      <label for="username">Username</label><input id="username" placeholder="Enter your username" autocomplete="username">
+      <label for="password">Password</label><input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+      <button class="login-button" onclick="login()">Log in <span>→</span></button>
+      <p id="error" class="login-error" role="alert"></p>
+      <div class="demo-access"><strong>Demo access</strong><p>Patient: <code>ammamma</code> / <code>1234</code></p><p>Caregiver: <code>uncle</code> / <code>1234</code></p></div>
+    </section>
+    <p class="login-foot">A little support for every day.</p>
+  </main>
+
+  <script>
+    const API = location.origin;
+
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = "";
+
+      try {
+        const res = await fetch(`${API}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          errorEl.textContent = "Invalid username or password.";
+          return;
+        }
+        const user = await res.json();
+        localStorage.setItem("user", JSON.stringify(user));
+        window.location.href = user.role === "patient" ? "patient.html" : "caregiver.html";
+      } catch (e) {
+        errorEl.textContent = "Could not reach server. Is backend running?";
+      }
+    }
+  </script>
+</body>
+</html>
