@@ -1,9 +1,0 @@
-{
-  "name": "Medi Remind",
-  "short_name": "Medi Remind",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#f7f9f6",
-  "theme_color": "#377b61",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
-}
