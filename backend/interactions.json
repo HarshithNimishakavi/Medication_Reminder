@@ -1,6 +1,0 @@
-[
-  { "a": "Aspirin", "b": "Warfarin", "severity": "high", "note": "Increases risk of bleeding." },
-  { "a": "Metformin", "b": "Furosemide", "severity": "medium", "note": "May affect blood sugar control." },
-  { "a": "Atorvastatin", "b": "Clarithromycin", "severity": "high", "note": "Increases risk of muscle damage." },
-  { "a": "Ibuprofen", "b": "Lisinopril", "severity": "medium", "note": "May reduce blood pressure medicine effectiveness." }
-]
