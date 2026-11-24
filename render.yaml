@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: medi-remind
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --prefix backend
+    startCommand: npm --prefix backend start
+    disk:
+      name: medi-remind-data
+      mountPath: /opt/render/project/src/backend/persist
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /opt/render/project/src/backend/persist

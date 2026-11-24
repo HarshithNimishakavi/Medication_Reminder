@@ -1,0 +1,9 @@
+node_modules/
+backend/node_modules/
+backend/data.json
+backend/persist/
+backend/push-keys.json
+backend/push-subscriptions.json
+backend/push-snoozes.json
+.env
+backend/.env
